@@ -4,7 +4,7 @@
 
 MiniJet x-ui is an x-ui derivative focused on **Mihomo-compatible clients**, unattended installation, and a radically simplified node-creation workflow.
 
-> **Source baseline:** the README of `yonggekkk/x-ui-yg` explicitly states that the project is not open source, and that repository mainly ships prebuilt `x-ui` binaries and packages. MiniJet therefore does not reverse-engineer or patch the closed binary. It uses the GPL-3.0 licensed `MHSanaei/3x-ui` source as the auditable baseline and applies MiniJet changes to a pinned upstream commit.
+> **Source baseline:** the public `yonggekkk/x-ui-yg` repository currently ships installation scripts, configuration files, prebuilt `x-ui` binaries and architecture packages, but not the complete editable frontend/backend source needed to directly rebuild its current panel. MiniJet therefore does not reverse-engineer that binary. It uses the GPL-3.0 licensed `MHSanaei/3x-ui` source as the auditable baseline and applies MiniJet changes to a pinned upstream commit; `x-ui-yg` is used as a reference for install flow and behavior.
 
 ## Goals
 
