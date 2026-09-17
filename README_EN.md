@@ -6,20 +6,8 @@ MiniJet x-ui is a minimalist x-ui derivative for **Mihomo-compatible clients**. 
 
 ## One-command install
 
-After the repository is public:
-
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/imaicai/MiniJet-x-ui/main/install.sh)
-```
-
-While this repository remains private, provide a read-only GitHub token:
-
-```bash
-export GITHUB_TOKEN='YOUR_READ_ONLY_TOKEN'
-bash <(curl -fsSL \
-  -H "Authorization: Bearer $GITHUB_TOKEN" \
-  -H "Accept: application/vnd.github.raw+json" \
-  https://api.github.com/repos/imaicai/MiniJet-x-ui/contents/install.sh)
 ```
 
 The installer does not ask the user to choose protocols, BBR, certificate mode, or ordinary panel parameters. It configures the panel, network tuning, certificates, random secure credentials, and services automatically.
@@ -53,11 +41,9 @@ MiniJet automatically selects a usable hostname or public IP and requests the ce
 
 ## Local UI inspection
 
-The frontend uses Vite on port `5173` and proxies API calls to the local Go backend on port `2053`.
+The complete panel UI needs the local backend. Linux or Ubuntu under WSL2 on Windows 11 is recommended. The Vite frontend runs on port `5173` and proxies API calls to the Go backend on local port `2053`.
 
-## Development
-
-Requirements: Node.js 24+, npm 10+, and for full backend integration the Go version declared in `go.mod`.
+Requirements: Node.js 24+, npm 10+, and the Go version declared in `go.mod`.
 
 ```bash
 git clone https://github.com/imaicai/MiniJet-x-ui.git
@@ -78,11 +64,20 @@ npm ci
 npm run dev
 ```
 
-Open:
+Open from the Windows browser:
 
 ```text
 http://localhost:5173/
 ```
+
+For existing Storybook components only:
+
+```bash
+cd frontend
+npm run storybook
+```
+
+Then open `http://localhost:6006/`.
 
 ## Source and license
 
