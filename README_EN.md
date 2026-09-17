@@ -2,31 +2,17 @@
 
 [中文（Default）](README.md) · [English](README_EN.md)
 
-MiniJet x-ui is an x-ui derivative focused on **Mihomo-compatible clients**, unattended installation, and a radically simplified node-creation workflow.
-
-> **Source baseline:** the public `yonggekkk/x-ui-yg` repository currently ships installation scripts, configuration files, prebuilt `x-ui` binaries and architecture packages, but not the complete editable frontend/backend source needed to directly rebuild its current panel. MiniJet therefore does not reverse-engineer that binary. It uses the GPL-3.0 licensed `MHSanaei/3x-ui` source as the auditable baseline and applies MiniJet changes to a pinned upstream commit; `x-ui-yg` is used as a reference for install flow and behavior.
-
-## Goals
-
-- One-command unattended installation: panel, service registration, network tuning, certificate setup, and secure random credentials.
-- Adding a node requires only **node name + port**.
-- Default node template: **VLESS + TCP + TLS + XTLS Vision**; UUID and supporting fields are generated automatically and the panel certificate is reused.
-- Reality is not the default because current Mihomo documentation warns about Reality compatibility with newer Xray-core versions. MiniJet prioritizes a stable Mihomo path using TLS + Vision.
-- Compact desktop-proxy UI: light work area, compact cards, consistent spacing/radius, advanced fields hidden from normal creation.
-- No “Related Notes” menu.
-- BBR + fq are enabled automatically when the host kernel supports BBR.
+MiniJet x-ui is a minimalist x-ui derivative for **Mihomo-compatible clients**. Installation is designed to be nearly unattended, node configuration is automated, and the normal UI only exposes settings the user actually needs.
 
 ## One-command install
 
-### After the repository is public
+After the repository is public:
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/imaicai/MiniJet-x-ui/main/install.sh)
 ```
 
-### While this repository remains private
-
-Provide a read-only GitHub token on the VPS:
+While this repository remains private, provide a read-only GitHub token:
 
 ```bash
 export GITHUB_TOKEN='YOUR_READ_ONLY_TOKEN'
@@ -36,53 +22,68 @@ bash <(curl -fsSL \
   https://api.github.com/repos/imaicai/MiniJet-x-ui/contents/install.sh)
 ```
 
-The installer ends with a concise result such as:
+The installer does not ask the user to choose protocols, BBR, certificate mode, or ordinary panel parameters. It configures the panel, network tuning, certificates, random secure credentials, and services automatically.
+
+At the end it shows only the information needed to sign in, for example:
 
 ```text
-Username: maicai
+Username: minijet
 Password: **************
-Panel port: 5500
-Base path: /MaiCai-xxxxxxxx/
-HTTPS URL: https://198.35.45.175:5500/MaiCai-xxxxxxxx/
-Certificate: Let's Encrypt IP / Domain / Self-signed fallback
+Panel port: 28463
+Base path: /MiniJet-a1b2c3d4/
+HTTPS URL: https://203.0.113.10:28463/MiniJet-a1b2c3d4/
 ```
 
-## Domain / IP certificate policy
+> `203.0.113.10` is a documentation-only example address and does not identify a real server.
 
-A remote shell cannot know whether the SSH client originally typed a hostname or an IP address; SSH hands the server an already-resolved connection. MiniJet therefore uses this order:
+The default base-path format is `/MiniJet-xxxxxxxx/`, where `xxxxxxxx` is generated randomly for every installation.
 
-1. `MINIJET_HOST=panel.example.com`, if supplied and DNS resolves to this host.
-2. Otherwise, the server FQDN if it resolves to this host's public address.
-3. Otherwise, request a public certificate for the server IP.
-4. ACME performs preflight checks, retries, and alternate challenge attempts.
-5. A public CA can still fail because of unreachable challenge ports, rate limits, CA outages, NAT or firewall rules. If that happens, MiniJet installs a local self-signed certificate so HTTPS still comes up and installs a background retry timer. A self-signed certificate encrypts traffic but is not publicly trusted.
+## Nodes
 
-Let's Encrypt IP certificates are short-lived, so automatic renewal is mandatory. MiniJet keeps acme.sh renewal and adds certificate repair checks.
+Both “Add Node” and “Edit Node” expose only:
 
-## Automatic node configuration
+- Node name
+- Port
 
-Normal “Add Node” mode exposes only node name and port. MiniJet automatically sets VLESS, TCP, TLS, Vision, UUID, client identity, unlimited traffic/expiry defaults, certificate paths, ALPN, and sniffing.
+Everything else is generated or preserved automatically. The current default template is **VLESS + TCP + TLS + XTLS Vision**. UUIDs, certificates, ALPN, sniffing, traffic defaults, expiry defaults, and other internal fields are handled automatically. The normal UI no longer exposes ENC, Reality, MLDSA65, fallbacks, Proxy Protocol, client groups, routing, outbounds, API documentation, or other nonessential configuration entry points.
 
-Legacy advanced fields such as ENC, decryption/encryption selection, fallbacks, Proxy Protocol, HTTP disguise, Reality keys/target/shortId, MLDSA65 and xver are not shown during normal creation. Existing nodes can still be opened in advanced edit mode for migration or troubleshooting.
+## Automatic certificates
 
-## Optional environment variables
+MiniJet automatically selects a usable hostname or public IP and requests the certificate. If a public certificate cannot be issued temporarily, MiniJet brings HTTPS up with an encrypted self-signed fallback and keeps retrying for a publicly trusted certificate in the background. No certificate-mode selection is required.
+
+## Local UI inspection
+
+The frontend uses Vite on port `5173` and proxies API calls to the local Go backend on port `2053`.
+
+## Development
+
+Requirements: Node.js 24+, npm 10+, and for full backend integration the Go version declared in `go.mod`.
 
 ```bash
-MINIJET_HOST=panel.example.com
-MINIJET_USERNAME=maicai
-MINIJET_PANEL_PORT=5500
-MINIJET_WEB_BASE_PATH=MaiCai
-MINIJET_ACME_EMAIL=you@example.com
-MINIJET_SKIP_BUILD=0
+git clone https://github.com/imaicai/MiniJet-x-ui.git
+cd MiniJet-x-ui
 ```
 
-## Upstream sync
+Terminal 1:
 
-The `minijet/` directory is the customization layer. `.github/workflows/sync-upstream.yml` imports the pinned 3x-ui source, applies the MiniJet UI and installer changes, runs frontend typecheck/build and a Go build, and only then writes the validated source back to `main`.
+```bash
+go run main.go
+```
 
-Upstream: <https://github.com/MHSanaei/3x-ui>  
-Reference: <https://github.com/yonggekkk/x-ui-yg>
+Terminal 2:
 
-## License
+```bash
+cd frontend
+npm ci
+npm run dev
+```
 
-MiniJet x-ui is a modified GPL-3.0 work based on 3x-ui. The complete derivative source remains GPL-3.0 and upstream notices are preserved.
+Open:
+
+```text
+http://localhost:5173/
+```
+
+## Source and license
+
+MiniJet uses the complete GPL-3.0 licensed `MHSanaei/3x-ui` source as its auditable baseline and applies MiniJet changes to a pinned upstream commit. `yonggekkk/x-ui-yg` is used only as a reference for installation flow and behavior. The complete derivative source remains GPL-3.0 and upstream notices are preserved.
