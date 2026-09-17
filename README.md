@@ -6,20 +6,8 @@ MiniJet x-ui 是一个面向 **Mihomo 客户端**的极简 x-ui 衍生项目：�
 
 ## 一键安装
 
-仓库公开后：
-
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/imaicai/MiniJet-x-ui/main/install.sh)
-```
-
-当前仓库为 Private 时，需要提供一个只读 GitHub Token：
-
-```bash
-export GITHUB_TOKEN='YOUR_READ_ONLY_TOKEN'
-bash <(curl -fsSL \
-  -H "Authorization: Bearer $GITHUB_TOKEN" \
-  -H "Accept: application/vnd.github.raw+json" \
-  https://api.github.com/repos/imaicai/MiniJet-x-ui/contents/install.sh)
 ```
 
 安装过程中不要求用户选择协议、BBR、证书类型或常规面板参数。脚本自动完成安装、网络优化、证书、随机安全凭据和服务配置。
@@ -34,7 +22,7 @@ bash <(curl -fsSL \
 登录地址(HTTPS): https://203.0.113.10:28463/MiniJet-a1b2c3d4/
 ```
 
-> `203.0.113.10` 是文档示例地址，不对应真实服务器。
+> `203.0.113.10` 是文档专用示例地址，不对应真实服务器。
 
 默认根路径格式为 `/MiniJet-xxxxxxxx/`，其中 `xxxxxxxx` 为每次安装自动生成的随机值。
 
@@ -53,11 +41,9 @@ MiniJet 自动判断可用域名或公网 IP 并申请证书。公共证书暂�
 
 ## 本地检查 UI
 
-前端使用 Vite，开发服务器端口为 `5173`，并把 API 转发到本地 `2053` 端口的 Go 后端。完整本地运行方式见下方“开发”说明。
+完整面板 UI 需要本地后端。推荐在 Linux 或 Windows 11 的 WSL2 Ubuntu 中运行；前端开发服务器使用 `5173` 端口，并自动把 API 转发到本机 `2053` 端口的 Go 后端。
 
-## 开发
-
-要求：Node.js 24+、npm 10+，完整后端联调还需要与 `go.mod` 匹配的 Go 版本。
+要求：Node.js 24+、npm 10+，以及 `go.mod` 指定的 Go 版本。
 
 ```bash
 git clone https://github.com/imaicai/MiniJet-x-ui.git
@@ -78,11 +64,20 @@ npm ci
 npm run dev
 ```
 
-然后浏览器打开：
+Windows 浏览器打开：
 
 ```text
 http://localhost:5173/
 ```
+
+只检查已有 Storybook 组件时可运行：
+
+```bash
+cd frontend
+npm run storybook
+```
+
+然后打开 `http://localhost:6006/`。
 
 ## 源码与许可
 
