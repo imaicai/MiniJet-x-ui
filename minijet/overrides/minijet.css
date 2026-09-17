@@ -1,0 +1,120 @@
+:root {
+  --mj-bg: #f5f7fb;
+  --mj-card: #ffffff;
+  --mj-border: #e7ebf0;
+  --mj-text: #24303c;
+  --mj-muted: #7b8794;
+  --mj-accent: #1677ff;
+  --mj-radius: 12px;
+  --mj-shadow: 0 8px 24px rgba(36, 48, 60, 0.06);
+}
+
+html,
+body,
+#app {
+  background: var(--mj-bg);
+}
+
+.ant-layout,
+.ant-layout-content {
+  background: var(--mj-bg) !important;
+}
+
+.ant-card {
+  border: 1px solid var(--mj-border) !important;
+  border-radius: var(--mj-radius) !important;
+  box-shadow: var(--mj-shadow);
+}
+
+.ant-card .ant-card-head {
+  min-height: 52px;
+  padding-inline: 16px;
+  border-bottom-color: var(--mj-border);
+}
+
+.ant-card .ant-card-body {
+  padding: 16px;
+}
+
+.ant-btn {
+  border-radius: 8px;
+  box-shadow: none !important;
+}
+
+.ant-btn-primary {
+  font-weight: 600;
+}
+
+.ant-input,
+.ant-input-number,
+.ant-select-selector,
+.ant-picker {
+  border-radius: 8px !important;
+}
+
+.ant-table-wrapper .ant-table {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.ant-table-wrapper .ant-table-thead > tr > th {
+  background: #f8fafc !important;
+  color: #5f6b78;
+  font-weight: 600;
+}
+
+.ant-table-wrapper .ant-table-tbody > tr > td {
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+
+.ant-layout-sider {
+  border-inline-end: 1px solid var(--mj-border);
+}
+
+.minijet-quick-modal .ant-modal-content {
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.minijet-quick-modal .ant-modal-header {
+  margin-bottom: 16px;
+}
+
+.minijet-quick-modal .ant-modal-title {
+  color: var(--mj-text);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.minijet-quick-modal .ant-form-item {
+  margin-bottom: 14px;
+}
+
+.minijet-quick-modal .ant-form-item-label > label {
+  color: #4d5966;
+  font-weight: 600;
+}
+
+.minijet-auto-profile {
+  padding: 12px;
+  border: 1px solid var(--mj-border);
+  border-radius: 10px;
+  background: #fafcff;
+}
+
+.minijet-profile-note {
+  display: block;
+  margin-top: 8px;
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .ant-card .ant-card-body {
+    padding: 12px;
+  }
+
+  .minijet-quick-modal .ant-modal-content {
+    padding: 16px;
+  }
+}
