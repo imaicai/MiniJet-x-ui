@@ -26,14 +26,15 @@ def copy(src: str, dst: str) -> None:
     shutil.copy2(OVERRIDES / src, target)
 
 
-# MiniJet UI overrides. The normal panel intentionally exposes only the
-# dashboard, node list, add/edit node form and essential node actions.
+# MiniJet UI overrides. The ordinary panel contains only the dashboard,
+# node list, two-field add/edit form and essential node actions.
 copy("MiniJetQuickInboundModal.tsx", "frontend/src/pages/inbounds/MiniJetQuickInboundModal.tsx")
 copy("InboundList.tsx", "frontend/src/pages/inbounds/list/InboundList.tsx")
 copy("RowActions.tsx", "frontend/src/pages/inbounds/list/RowActions.tsx")
 copy("useInboundColumns.tsx", "frontend/src/pages/inbounds/list/useInboundColumns.tsx")
 copy("AppSidebar.tsx", "frontend/src/layouts/AppSidebar.tsx")
 copy("IndexPage.tsx", "frontend/src/pages/index/IndexPage.tsx")
+copy("routes.tsx", "frontend/src/routes.tsx")
 copy("minijet.css", "frontend/src/styles/minijet.css")
 
 main_tsx = ROOT / "frontend/src/main.tsx"
@@ -43,8 +44,8 @@ replace_once(
     "import '@/styles/page-cards.css';\nimport '@/styles/minijet.css';\n",
 )
 
-# Remove the command palette from the ordinary UI. Advanced routes remain in
-# source for compatibility/migration, but are not advertised in MiniJet.
+# The command palette exposes advanced pages, so it is removed entirely from
+# the ordinary MiniJet shell.
 panel_layout = ROOT / "frontend/src/layouts/PanelLayout.tsx"
 replace_once(panel_layout, "import CommandPalette from '@/components/command-palette/CommandPalette';\n", "")
 replace_once(
@@ -66,6 +67,11 @@ replace_once(
     inbounds_page,
     "const InboundFormModal = lazy(() => import('./form/InboundFormModal'));\n",
     "const MiniJetQuickInboundModal = lazy(() => import('./MiniJetQuickInboundModal'));\n",
+)
+replace_once(
+    inbounds_page,
+    "  const { nodes: nodesList, fetched: nodesFetched } = useNodesQuery();\n",
+    "  const { nodes: nodesList } = useNodesQuery();\n",
 )
 
 old_modal = """        <LazyMount when={formOpen}>
