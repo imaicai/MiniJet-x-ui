@@ -1,0 +1,95 @@
+name: Sync upstream and apply MiniJet
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'minijet/**'
+      - '.github/workflows/sync-upstream.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: minijet-upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    env:
+      UPSTREAM_REPO: https://github.com/MHSanaei/3x-ui.git
+      UPSTREAM_COMMIT: 1c0ce80e8ea8a3e047d2ed8b2ea35e9292a89981
+    steps:
+      - name: Checkout MiniJet layer
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Import pinned GPL source
+        shell: bash
+        run: |
+          set -euxo pipefail
+          rm -rf /tmp/3x-ui
+          git clone --no-checkout "$UPSTREAM_REPO" /tmp/3x-ui
+          git -C /tmp/3x-ui checkout "$UPSTREAM_COMMIT"
+          rsync -a --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='minijet/' \
+            --exclude='README.md' \
+            --exclude='README_EN.md' \
+            /tmp/3x-ui/ ./
+
+      - name: Apply MiniJet source changes
+        shell: bash
+        run: |
+          set -euxo pipefail
+          python3 minijet/apply-minijet.py .
+          cp minijet/installer.sh install.sh
+          chmod +x install.sh minijet/*.sh minijet/*.py
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Setup Go from go.mod
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Validate frontend
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd frontend
+          npm ci
+          npm run typecheck
+          npm run build
+
+      - name: Validate Go build
+        shell: bash
+        run: |
+          set -euxo pipefail
+          CGO_ENABLED=1 go build -o /tmp/minijet-x-ui main.go
+          test -s /tmp/minijet-x-ui
+
+      - name: Commit validated source
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git config user.name 'MiniJet Sync Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No source changes to commit.'
+            exit 0
+          fi
+          git commit -m "chore: import pinned 3x-ui source and apply MiniJet"
+          git push origin HEAD:main
