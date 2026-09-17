@@ -110,7 +110,7 @@
   "menu": {
     "theme": "主题",
     "dashboard": "系统状态",
-    "inbounds": "入站",
+    "inbounds": "节点",
     "clients": "客户端",
     "groups": "分组",
     "nodes": "节点",

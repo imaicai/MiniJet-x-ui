@@ -27,7 +27,7 @@ body,
 }
 
 .ant-card .ant-card-head {
-  min-height: 52px;
+  min-height: 50px;
   padding-inline: 16px;
   border-bottom-color: var(--mj-border);
 }
@@ -36,20 +36,20 @@ body,
   padding: 16px;
 }
 
-.ant-btn {
-  border-radius: 8px;
-  box-shadow: none !important;
-}
-
-.ant-btn-primary {
-  font-weight: 600;
-}
-
+.ant-btn,
 .ant-input,
 .ant-input-number,
 .ant-select-selector,
 .ant-picker {
   border-radius: 8px !important;
+}
+
+.ant-btn {
+  box-shadow: none !important;
+}
+
+.ant-btn-primary {
+  font-weight: 600;
 }
 
 .ant-table-wrapper .ant-table {
@@ -70,6 +70,11 @@ body,
 
 .ant-layout-sider {
   border-inline-end: 1px solid var(--mj-border);
+}
+
+.brand-text {
+  font-weight: 700;
+  letter-spacing: 0.2px;
 }
 
 .minijet-quick-modal .ant-modal-content {
@@ -96,17 +101,27 @@ body,
   font-weight: 600;
 }
 
-.minijet-auto-profile {
-  padding: 12px;
-  border: 1px solid var(--mj-border);
-  border-radius: 10px;
-  background: #fafcff;
+.minijet-dashboard {
+  width: min(960px, 100%);
+  margin: 0 auto;
 }
 
-.minijet-profile-note {
-  display: block;
-  margin-top: 8px;
-  line-height: 1.6;
+.minijet-status-card {
+  margin-bottom: 12px;
+}
+
+.minijet-status-line,
+.minijet-network-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.minijet-status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 @media (max-width: 768px) {
@@ -116,5 +131,9 @@ body,
 
   .minijet-quick-modal .ant-modal-content {
     padding: 16px;
+  }
+
+  .minijet-status-grid {
+    grid-template-columns: 1fr;
   }
 }

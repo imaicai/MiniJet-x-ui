@@ -90,7 +90,7 @@ random_port() {
       echo "$p"; return 0
     fi
   done
-  echo 5500
+  echo 28463
 }
 
 install_packages
@@ -124,10 +124,10 @@ else
   fi
 fi
 
-USERNAME="${MINIJET_USERNAME:-maicai}"
+USERNAME="${MINIJET_USERNAME:-minijet}"
 PASSWORD="${MINIJET_PASSWORD:-$(openssl rand -base64 36 | tr -dc 'A-Za-z0-9!@#%+=' | head -c 22)}"
 PANEL_PORT="${MINIJET_PANEL_PORT:-$(random_port)}"
-BASE_PATH="${MINIJET_WEB_BASE_PATH:-MaiCai-$(openssl rand -hex 4)}"
+BASE_PATH="${MINIJET_WEB_BASE_PATH:-MiniJet-$(openssl rand -hex 4)}"
 BASE_PATH="${BASE_PATH#/}"; BASE_PATH="${BASE_PATH%/}"
 ACME_EMAIL="${MINIJET_ACME_EMAIL:-}"
 
@@ -135,8 +135,6 @@ ACME_EMAIL="${MINIJET_ACME_EMAIL:-}"
   echo 'MINIJET_PANEL_PORT 必须是 1-65535。' >&2; exit 1;
 }
 
-# Upstream is used for OS/service/database installation only. MiniJet later
-# replaces the embedded-web Go binary with a build from this repository.
 (
   export XUI_NONINTERACTIVE=1
   export XUI_SSL_MODE=none
@@ -148,10 +146,9 @@ ACME_EMAIL="${MINIJET_ACME_EMAIL:-}"
   curl -fsSL "$UPSTREAM_INSTALL" | bash
 ) >>"$LOG" 2>&1
 
-# Network tuning: BBR + fq only where the running kernel advertises BBR.
 fetch_repo_file minijet/tune-network.sh /usr/local/sbin/minijet-tune-network
 chmod 755 /usr/local/sbin/minijet-tune-network
-NETWORK_TUNE="$(/usr/local/sbin/minijet-tune-network 2>>"$LOG" || echo kernel-default)"
+/usr/local/sbin/minijet-tune-network >>"$LOG" 2>&1 || true
 
 cat > "$STATE_DIR/install.env" <<EOF
 MINIJET_HOST=$(printf '%q' "$HOST")
@@ -165,8 +162,6 @@ MINIJET_USERNAME=$(printf '%q' "$USERNAME")
 EOF
 chmod 600 "$STATE_DIR/install.env"
 
-# Certificate repair: public Domain/IP cert first, self-signed only as an
-# encrypted fail-safe. A timer keeps retrying public issuance after fallback.
 fetch_repo_file minijet/cert-repair.sh /usr/local/sbin/minijet-cert-repair
 chmod 755 /usr/local/sbin/minijet-cert-repair
 /usr/local/sbin/minijet-cert-repair >>"$LOG" 2>&1 || true
@@ -270,8 +265,6 @@ build_minijet_binary() {
 }
 
 build_minijet_binary
-
-# Re-apply certificate after replacing/restarting the source-built binary.
 /usr/local/sbin/minijet-cert-repair >>"$LOG" 2>&1 || true
 
 CERT_STATUS="$(cat "$STATE_DIR/cert-status" 2>/dev/null || echo unknown)"
@@ -281,11 +274,11 @@ else
   URL_HOST="$HOST"
 fi
 
-# Final output intentionally stays concise.
 printf '\n登录用户名: %s\n' "$USERNAME"
 printf '登录密码: %s\n' "$PASSWORD"
 printf '登录端口: %s\n' "$PANEL_PORT"
 printf '登录根路径: /%s/\n' "$BASE_PATH"
 printf '登录地址(HTTPS): https://%s:%s/%s/\n' "$URL_HOST" "$PANEL_PORT" "$BASE_PATH"
-printf '证书状态: %s\n' "$CERT_STATUS"
-printf '网络加速: %s\n' "$NETWORK_TUNE"
+if [[ "$CERT_STATUS" == self-signed-* ]]; then
+  printf '提示: 当前使用临时自签名证书，后台会自动重试公开证书。\n'
+fi

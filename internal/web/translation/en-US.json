@@ -110,7 +110,7 @@
   "menu": {
     "theme": "Theme",
     "dashboard": "Overview",
-    "inbounds": "Inbounds",
+    "inbounds": "Nodes",
     "clients": "Clients",
     "groups": "Groups",
     "nodes": "Nodes",
@@ -320,7 +320,7 @@
       "createdAt": "Created",
       "updatedAt": "Updated",
       "resetTraffic": "Reset Traffic",
-      "addInbound": "Add Inbound",
+      "addInbound": "Add Node",
       "generalActions": "General Actions",
       "modifyInbound": "Modify Inbound",
       "deleteConfirmTitle": "Delete inbound \"{remark}\"?",

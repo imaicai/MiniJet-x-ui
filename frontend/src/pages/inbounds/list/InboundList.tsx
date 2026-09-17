@@ -1,119 +1,41 @@
 import { useCallback, useMemo, useState, type Key } from 'react';
-import { useLocation, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import {
-  Button,
-  Card,
-  Checkbox,
-  Dropdown,
-  Input,
-  Select,
-  Space,
-  Switch,
-  Table,
-  Tag,
-  Tooltip,
-  type MenuProps,
-} from 'antd';
-import {
-  PlusOutlined,
-  MenuOutlined,
-  MoreOutlined,
-  ExportOutlined,
-  ImportOutlined,
-  ReloadOutlined,
-  InfoCircleOutlined,
-  DeleteOutlined,
-  SearchOutlined,
-} from '@ant-design/icons';
+import { Button, Card, Checkbox, Dropdown, Input, Space, Switch, Table, Tag } from 'antd';
+import { DeleteOutlined, MoreOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 
 import { HttpUtil } from '@/utils';
-import { activateOnKey } from '@/utils/a11y';
-
 import { buildRowActionsMenu } from './RowActions';
 import { useInboundColumns } from './useInboundColumns';
-import { buildHostRemarksByInboundId, formatHostRemarksLabel } from './helpers';
-import InboundStatsModal from './InboundStatsModal';
-import type { DBInboundRecord, GeneralAction, InboundListProps, RowAction } from './types';
+import type { DBInboundRecord, InboundListProps, RowAction } from './types';
 import './InboundList.css';
 
-function HostRemarksSuffix({ remarks }: { remarks: string[] }) {
-  if (remarks.length === 0) return null;
-  const { display, full } = formatHostRemarksLabel(remarks);
-  return (
-    <Tooltip title={full}>
-      <span className="inbound-host-remarks"> ({display})</span>
-    </Tooltip>
-  );
-}
-
-export default function InboundList({
-  dbInbounds,
-  clientCount,
-  lastOnlineMap: _lastOnlineMap,
-  inboundSpeed,
-  expireDiff,
-  trafficDiff,
-  pageSize,
-  isMobile,
-  subEnable,
-  nodesById,
-  hasActiveNode,
-  hosts,
-  onAddInbound,
-  onGeneralAction,
-  onRowAction,
-  onBulkDelete,
-}: InboundListProps) {
+export default function InboundList(props: InboundListProps) {
+  const {
+    dbInbounds,
+    clientCount,
+    inboundSpeed,
+    expireDiff,
+    trafficDiff,
+    pageSize,
+    isMobile,
+    subEnable,
+    nodesById,
+    hasActiveNode,
+    onAddInbound,
+    onRowAction,
+    onBulkDelete,
+  } = props;
   const { t } = useTranslation();
-  const [statsRecord, setStatsRecord] = useState<DBInboundRecord | null>(null);
+  const [searchKey, setSearchKey] = useState('');
   const [selectedRowKeys, setSelectedRowKeys] = useState<number[]>([]);
-  // Node filter (#4997): 'all' shows everything, 0 is the local-panel
-  // sentinel (inbounds without a nodeId), otherwise a node id. Session-only.
-  const [nodeFilter, setNodeFilter] = useState<number | 'all'>('all');
-  const location = useLocation();
-  const [searchParams] = useSearchParams();
-  const searchParam = searchParams.get('search');
-  const [searchKey, setSearchKey] = useState(() => searchParam || '');
-  const [prevLocationKey, setPrevLocationKey] = useState(location.key);
-
-  if (location.key !== prevLocationKey) {
-    setPrevLocationKey(location.key);
-    if (searchParam !== null) {
-      setSearchKey(searchParam);
-    }
-  }
-
-  const showNodeFilter = useMemo(
-    () => nodesById.size > 0 || dbInbounds.some((ib) => ib.nodeId != null),
-    [nodesById, dbInbounds],
-  );
-
-  const nodeFilterOptions = useMemo(
-    () => [
-      { value: 'all' as const, label: t('pages.clients.filters.nodes') },
-      { value: 0, label: t('pages.clients.filters.localPanel') },
-      ...Array.from(nodesById.values()).map((n) => ({ value: n.id, label: n.name || `#${n.id}` })),
-    ],
-    [nodesById, t],
-  );
-
-  const hostRemarksByInboundId = useMemo(() => buildHostRemarksByInboundId(hosts), [hosts]);
 
   const visibleInbounds = useMemo(() => {
-    let list = dbInbounds;
-    if (nodeFilter === 0) list = list.filter((ib) => ib.nodeId == null);
-    else if (nodeFilter !== 'all') list = list.filter((ib) => ib.nodeId === nodeFilter);
     const q = searchKey.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter((ib) => {
-      if ((ib.remark || '').toLowerCase().includes(q)) return true;
-      if (String(ib.port).includes(q)) return true;
-      if ((ib.protocol || '').toLowerCase().includes(q)) return true;
-      const hostRemarks = hostRemarksByInboundId.get(ib.id) ?? [];
-      return hostRemarks.some((remark) => remark.toLowerCase().includes(q));
-    });
-  }, [dbInbounds, nodeFilter, searchKey, hostRemarksByInboundId]);
+    if (!q) return dbInbounds;
+    return dbInbounds.filter(
+      (item) => (item.remark || '').toLowerCase().includes(q) || String(item.port).includes(q),
+    );
+  }, [dbInbounds, searchKey]);
 
   const onSwitchEnable = useCallback(async (dbInbound: DBInboundRecord, next: boolean) => {
     const previous = dbInbound.enable;
@@ -128,50 +50,17 @@ export default function InboundList({
     }
   }, []);
 
-  const hasAnyRemark = useMemo(
-    () =>
-      dbInbounds.some((i) => typeof i.remark === 'string' && i.remark.trim() !== '') ||
-      dbInbounds.some((i) => (hostRemarksByInboundId.get(i.id)?.length ?? 0) > 0),
-    [dbInbounds, hostRemarksByInboundId],
-  );
-
-  const hasAnySubSortIndex = useMemo(
-    () => dbInbounds.some((i) => (i.subSortIndex ?? 1) !== 1),
-    [dbInbounds],
-  );
-
-  const toggleSelect = useCallback((id: number, checked: boolean) => {
-    setSelectedRowKeys((prev) => {
-      const next = new Set(prev);
-      if (checked) next.add(id);
-      else next.delete(id);
-      return Array.from(next);
-    });
-  }, []);
-
-  const selectAll = useCallback(
-    (checked: boolean) => {
-      setSelectedRowKeys(checked ? visibleInbounds.map((i) => i.id) : []);
-    },
-    [visibleInbounds],
-  );
-
-  const allSelected =
-    visibleInbounds.length > 0 && selectedRowKeys.length === visibleInbounds.length;
-  const someSelected =
-    selectedRowKeys.length > 0 && selectedRowKeys.length < visibleInbounds.length;
-
   const handleBulkDelete = useCallback(async () => {
     const ok = await onBulkDelete(selectedRowKeys);
     if (ok) setSelectedRowKeys([]);
   }, [onBulkDelete, selectedRowKeys]);
 
   const columns = useInboundColumns({
-    hasAnyRemark,
-    hasAnySubSortIndex,
+    hasAnyRemark: true,
+    hasAnySubSortIndex: false,
     hasActiveNode,
     nodesById,
-    hostRemarksByInboundId,
+    hostRemarksByInboundId: new Map(),
     clientCount,
     inboundSpeed,
     subEnable,
@@ -181,222 +70,95 @@ export default function InboundList({
     onSwitchEnable,
   });
 
-  const tableScrollX = useMemo(
-    () => columns.reduce((sum, c) => sum + (typeof c.width === 'number' ? c.width : 0), 0),
-    [columns],
-  );
-
-  const paginationFor = (rows: DBInboundRecord[]) => {
-    const size = pageSize > 0 ? pageSize : rows.length || 1;
-    return { pageSize: size, showSizeChanger: false, hideOnSinglePage: true };
+  const page = {
+    pageSize: pageSize > 0 ? pageSize : visibleInbounds.length || 1,
+    showSizeChanger: false,
+    hideOnSinglePage: true,
   };
 
-  const generalActionsMenu: MenuProps = {
-    items: [
-      { key: 'import', icon: <ImportOutlined />, label: t('pages.inbounds.importInbound') },
-      { key: 'export', icon: <ExportOutlined />, label: t('pages.inbounds.export') },
-      ...(subEnable
-        ? [
-            {
-              key: 'subs',
-              icon: <ExportOutlined />,
-              label: `${t('pages.inbounds.export')} — ${t('pages.settings.subSettings')}`,
-            },
-          ]
-        : []),
-      {
-        key: 'resetInbounds',
-        icon: <ReloadOutlined />,
-        label: t('pages.inbounds.resetAllTraffic'),
-      },
-    ],
-    onClick: ({ key }) => onGeneralAction(key as GeneralAction),
+  const toggleSelect = (id: number, checked: boolean) => {
+    setSelectedRowKeys((current) =>
+      checked ? Array.from(new Set([...current, id])) : current.filter((value) => value !== id),
+    );
   };
 
   return (
     <Card
-      hoverable
       title={
-        <Space>
-          <Button
-            type="primary"
-            onClick={onAddInbound}
-            icon={<PlusOutlined />}
-            aria-label={t('pages.inbounds.addInbound')}
-          >
-            {!isMobile && t('pages.inbounds.addInbound')}
+        <Space wrap size={8}>
+          <Button type="primary" onClick={onAddInbound} icon={<PlusOutlined />}>
+            {t('pages.inbounds.addInbound')}
           </Button>
-          <Dropdown trigger={['click']} menu={generalActionsMenu}>
-            <Button
-              type="primary"
-              icon={<MenuOutlined />}
-              aria-label={t('pages.inbounds.generalActions')}
-            >
-              {!isMobile && t('pages.inbounds.generalActions')}
-            </Button>
-          </Dropdown>
-          {showNodeFilter && (
-            <Select
-              value={nodeFilter}
-              onChange={(v) => setNodeFilter(v)}
-              options={nodeFilterOptions}
-              showSearch
-              popupMatchSelectWidth={false}
-              style={{ minWidth: isMobile ? 90 : 140 }}
-              aria-label={t('pages.clients.filters.nodes')}
-            />
-          )}
           <Input
             value={searchKey}
-            onChange={(e) => setSearchKey(e.target.value)}
+            onChange={(event) => setSearchKey(event.target.value)}
             placeholder={t('search')}
             allowClear
             prefix={<SearchOutlined />}
-            style={{ maxWidth: isMobile ? 110 : 200 }}
-            aria-label={t('search')}
+            style={{ width: isMobile ? 150 : 220 }}
           />
           {selectedRowKeys.length > 0 && (
-            <>
-              <Tag
-                color="blue"
-                closable
-                onClose={() => setSelectedRowKeys([])}
-                style={{ marginInlineEnd: 0 }}
-              >
-                {t('pages.inbounds.selectedCount', { count: selectedRowKeys.length })}
-              </Tag>
-              <Button
-                danger
-                icon={<DeleteOutlined />}
-                onClick={handleBulkDelete}
-                aria-label={t('delete')}
-              >
-                {!isMobile && t('delete')}
-              </Button>
-            </>
+            <Button danger icon={<DeleteOutlined />} onClick={handleBulkDelete}>
+              {t('delete')} ({selectedRowKeys.length})
+            </Button>
           )}
         </Space>
       }
     >
-      <Space orientation="vertical" style={{ width: '100%' }}>
-        {isMobile ? (
-          <div className="inbound-cards">
-            {visibleInbounds.length === 0 ? (
-              <div className="card-empty">
-                <ImportOutlined style={{ fontSize: 28, opacity: 0.5 }} />
-                <div>{t('noData')}</div>
-              </div>
-            ) : (
-              <>
-                <div className="card-bulk-bar">
-                  <Checkbox
-                    checked={allSelected}
-                    indeterminate={someSelected}
-                    onChange={(e) => selectAll(e.target.checked)}
-                  >
-                    {t('pages.inbounds.selectAll')}
-                  </Checkbox>
-                  {selectedRowKeys.length > 0 && (
-                    <span className="bulk-count">{selectedRowKeys.length}</span>
-                  )}
-                </div>
-                {visibleInbounds.map((record) => (
-                  <div
-                    key={record.id}
-                    className={`inbound-card${selectedRowKeys.includes(record.id) ? ' is-selected' : ''}`}
-                  >
-                    <div className="card-head">
-                      <Checkbox
-                        checked={selectedRowKeys.includes(record.id)}
-                        onChange={(e) => toggleSelect(record.id, e.target.checked)}
-                      />
-                      <span className="card-id">#{record.id}</span>
-                      <span className="tag-name">
-                        <span className="inbound-remark">{record.remark}</span>
-                        <HostRemarksSuffix remarks={hostRemarksByInboundId.get(record.id) ?? []} />
-                      </span>
-                      <div className="card-actions">
-                        <Tooltip title={t('pages.inbounds.inboundInfo')}>
-                          <InfoCircleOutlined
-                            className="row-action-trigger"
-                            role="button"
-                            tabIndex={0}
-                            aria-label={t('pages.inbounds.inboundInfo')}
-                            onClick={() => setStatsRecord(record)}
-                            onKeyDown={activateOnKey(() => setStatsRecord(record))}
-                          />
-                        </Tooltip>
-                        <Switch
-                          checked={record.enable}
-                          size="small"
-                          onChange={(next) => onSwitchEnable(record, next)}
-                        />
-                        <Dropdown
-                          trigger={['click']}
-                          placement="bottomRight"
-                          menu={{
-                            items: buildRowActionsMenu({
-                              record,
-                              subEnable,
-                              t,
-                              isMobile: true,
-                              hasClients: (clientCount[record.id]?.clients || 0) > 0,
-                            }),
-                            onClick: ({ key }) =>
-                              onRowAction({ key: key as RowAction, dbInbound: record }),
-                          }}
-                        >
-                          <Button
-                            type="text"
-                            size="small"
-                            className="row-action-trigger"
-                            icon={<MoreOutlined />}
-                            aria-label={t('more')}
-                          />
-                        </Dropdown>
-                      </div>
-                    </div>
+      {isMobile ? (
+        <div className="inbound-cards">
+          {visibleInbounds.length === 0 ? (
+            <div className="card-empty">{t('noData')}</div>
+          ) : (
+            visibleInbounds.map((record) => {
+              const speed = inboundSpeed[record.id];
+              const speedText = speed ? `${Math.round(speed.up + speed.down)} B/s` : '—';
+              return (
+                <div key={record.id} className="inbound-card">
+                  <div className="card-head">
+                    <Checkbox
+                      checked={selectedRowKeys.includes(record.id)}
+                      onChange={(event) => toggleSelect(record.id, event.target.checked)}
+                    />
+                    <span className="tag-name">{record.remark || '—'}</span>
+                    <Tag>{record.port}</Tag>
+                    <Tag>{speedText}</Tag>
+                    <Switch
+                      checked={record.enable}
+                      size="small"
+                      onChange={(next) => onSwitchEnable(record, next)}
+                    />
+                    <Dropdown
+                      trigger={['click']}
+                      placement="bottomRight"
+                      menu={{
+                        items: buildRowActionsMenu({ record, subEnable, t, isMobile: true }),
+                        onClick: ({ key }) =>
+                          onRowAction({ key: key as RowAction, dbInbound: record }),
+                      }}
+                    >
+                      <Button type="text" size="small" icon={<MoreOutlined />} />
+                    </Dropdown>
                   </div>
-                ))}
-              </>
-            )}
-          </div>
-        ) : (
-          <Table
-            columns={columns}
-            dataSource={visibleInbounds}
-            rowKey={(r) => r.id}
-            rowSelection={{
-              selectedRowKeys,
-              onChange: (keys: Key[]) => setSelectedRowKeys(keys as number[]),
-            }}
-            pagination={paginationFor(visibleInbounds)}
-            scroll={{ x: tableScrollX }}
-            style={{ marginTop: 10 }}
-            size="small"
-            locale={{
-              emptyText: (
-                <div className="card-empty">
-                  <ImportOutlined style={{ fontSize: 32, marginBottom: 8 }} />
-                  <div>{t('noData')}</div>
                 </div>
-              ),
-            }}
-          />
-        )}
-      </Space>
-
-      <InboundStatsModal
-        open={isMobile && !!statsRecord}
-        record={statsRecord}
-        hasActiveNode={hasActiveNode}
-        nodesById={nodesById}
-        clientCount={clientCount}
-        inboundSpeed={inboundSpeed}
-        trafficDiff={trafficDiff}
-        expireDiff={expireDiff}
-        onClose={() => setStatsRecord(null)}
-      />
+              );
+            })
+          )}
+        </div>
+      ) : (
+        <Table
+          columns={columns}
+          dataSource={visibleInbounds}
+          rowKey={(record) => record.id}
+          rowSelection={{
+            selectedRowKeys,
+            onChange: (keys: Key[]) => setSelectedRowKeys(keys as number[]),
+          }}
+          pagination={page}
+          size="small"
+          locale={{ emptyText: t('noData') }}
+        />
+      )}
     </Card>
   );
 }

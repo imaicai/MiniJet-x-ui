@@ -48,7 +48,6 @@ const PromptModal = lazy(() => import('@/components/feedback/PromptModal'));
 import { useInbounds } from './useInbounds';
 import { InboundList } from './list';
 import { LazyMount } from '@/components/utility';
-const InboundFormModal = lazy(() => import('./form/InboundFormModal'));
 const MiniJetQuickInboundModal = lazy(() => import('./MiniJetQuickInboundModal'));
 const CloneInboundModal = lazy(() => import('./CloneInboundModal'));
 const InboundInfoModal = lazy(() => import('./info/InboundInfoModal'));
@@ -114,7 +113,7 @@ export default function InboundsPage() {
     setMessageInstance(messageApi);
   }, [messageApi]);
 
-  const { nodes: nodesList, fetched: nodesFetched } = useNodesQuery();
+  const { nodes: nodesList } = useNodesQuery();
   // MTProto share links are generated from this list, so an empty one must mean
   // "no hosts" and not "not loaded yet" — the gate below waits for it.
   const {
@@ -820,24 +819,13 @@ export default function InboundsPage() {
         </Layout>
 
         <LazyMount when={formOpen}>
-          {formMode === 'add' ? (
-            <MiniJetQuickInboundModal
-              open={formOpen}
-              onClose={() => setFormOpen(false)}
-              onSaved={refresh}
-            />
-          ) : (
-            <InboundFormModal
-              open={formOpen}
-              onClose={() => setFormOpen(false)}
-              onSaved={refresh}
-              mode={formMode}
-              dbInbound={formDbInbound}
-              dbInbounds={dbInbounds}
-              availableNodes={nodesList}
-              availableNodesFetched={nodesFetched}
-            />
-          )}
+          <MiniJetQuickInboundModal
+            open={formOpen}
+            onClose={() => setFormOpen(false)}
+            onSaved={refresh}
+            mode={formMode}
+            dbInbound={formDbInbound}
+          />
         </LazyMount>
         <LazyMount when={infoOpen}>
           <InboundInfoModal
